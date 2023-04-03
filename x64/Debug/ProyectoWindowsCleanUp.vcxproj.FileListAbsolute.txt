@@ -1,0 +1,5 @@
+C:\git\UMG\3er. Semestre\ProyectoWindowsCleanUp\x64\Debug\ProyectoWindowsCleanUp.vcxproj.AssemblyReference.cache
+C:\git\UMG\3er. Semestre\ProyectoWindowsCleanUp\x64\Debug\ProyectoWindowsCleanUp.vcxproj.SuggestedBindingRedirects.cache
+C:\git\UMG\3er. Semestre\ProyectoWindowsCleanUp\x64\Debug\ProyectoWindowsCleanUp.exe
+C:\git\UMG\3er. Semestre\ProyectoWindowsCleanUp\x64\Debug\ProyectoWindowsCleanUp.Main.resources
+C:\git\UMG\3er. Semestre\ProyectoWindowsCleanUp\x64\Debug\ProyectoWindowsCleanUp.vcxproj.GenerateResource.cache
