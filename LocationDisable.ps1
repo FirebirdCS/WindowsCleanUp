@@ -191,5 +191,265 @@ echo "--- Disable game screen recording"
 Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWORD -Force
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -Value 0 -Type DWORD -Force
 
+# Do not allow use of biometrics
+Write-Host "--- Do not allow the use of biometrics"
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Biometrics" -Name "Enabled" -Value 0 -Type DWORD -Force
+
+# Do not allow users to log on using biometrics
+Write-Host "--- Do not allow users to log on using biometrics"
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Biometrics\Credential Provider" -Name "Enabled" -Value 0 -Type DWORD -Force
+
+# Disable ad customization with Advertising ID
+echo "--- Disable ad customization with Advertising ID"
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value 0
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" -Name "DisabledByGroupPolicy" -Value 1
+
+# Turn Off Suggested Content in Settings app
+echo "--- Turn Off Suggested Content in Settings app"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Value 0 -Type DWORD
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-353694Enabled" -Value 0 -Type DWORD
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-353696Enabled" -Value 0 -Type DWORD
+
+# Disable Windows Tips
+echo "--- Disable Windows Tips"
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -Value "1"
+
+# Disable Windows Spotlight (random wallpaper on lock screen)
+echo "--- Disable Windows Spotlight (random wallpaper on lock screen)"
+Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsSpotlightFeatures" -Value "1"
+
+# Disable Microsoft consumer experiences
+echo "--- Disable Microsoft consumer experiences"
+Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -Value "1"
+
+# Disable Activity Feed
+Write-Host "--- Disable Activity Feed"
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -Force
+
+# ----------------------------------------------------------
+# ------------------Kill OneDrive process-------------------
+# ----------------------------------------------------------
+Write-Host "--- Kill OneDrive process"
+Stop-Process -Name OneDrive -Force
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# --------------------Uninstall OneDrive--------------------
+# ----------------------------------------------------------
+Write-Host "--- Uninstall OneDrive"
+if ($env:PROCESSOR_ARCHITECTURE -eq "x86") {
+    & "$env:SystemRoot\System32\OneDriveSetup.exe" /uninstall 2>$null
+} else {
+    & "$env:SystemRoot\SysWOW64\OneDriveSetup.exe" /uninstall 2>$null
+}
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------Remove OneDrive leftovers-----------------
+# ----------------------------------------------------------
+Write-Host "--- Remove OneDrive leftovers"
+Remove-Item "$env:UserProfile\OneDrive" -Recurse -Force
+Remove-Item "$env:LocalAppData\Microsoft\OneDrive" -Recurse -Force
+Remove-Item "$env:ProgramData\Microsoft OneDrive" -Recurse -Force
+Remove-Item "$env:SystemDrive\OneDriveTemp" -Recurse -Force
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------Delete OneDrive shortcuts-----------------
+# ----------------------------------------------------------
+Write-Host "--- Delete OneDrive shortcuts"
+Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Microsoft OneDrive.lnk" -Force
+Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -Force
+Remove-Item "$env:USERPROFILE\Links\OneDrive.lnk" -Force
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------Disable usage of OneDrive-----------------
+# ----------------------------------------------------------
+Write-Host "--- Disable usage of OneDrive"
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Force | Out-Null
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSyncNGSC" -Value 1 -Type DWord -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive" -Name "DisableFileSync" -Value 1 -Type DWord -Force
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ---Prevent automatic OneDrive install for current user----
+# ----------------------------------------------------------
+Write-Host "--- Prevent automatic OneDrive install for current user"
+Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup" -Force
+# ----------------------------------------------------------
+
+# Remove OneDrive from explorer menu
+Write-Host "--- Remove OneDrive from explorer menu"
+Remove-Item -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -Force
+Remove-Item -Path "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse -Force
+New-ItemProperty -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value 0 -PropertyType DWORD -Force
+New-ItemProperty -Path "HKCR:\Wow6432Node\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name "System.IsPinnedToNameSpaceTree" -Value 0 -PropertyType DWORD -Force
+
+# Delete all OneDrive related Services
+Write-Host "--- Delete all OneDrive related Services"
+$scheduledTasks = schtasks /query /fo csv | Select-String -Pattern "OneDrive" | ConvertFrom-Csv
+$scheduledTasks | ForEach-Object { schtasks /Delete /TN $_.TaskName /F }
+
+# Delete OneDrive path from registry
+Write-Host "--- Delete OneDrive path from registry"
+Remove-ItemProperty -Path "HKCU:\Environment" -Name "OneDrive" -Force
+
+# Uninstall Cortana app
+Write-Host "--- Uninstall Cortana app"
+Get-AppxPackage 'Microsoft.549981C3F5F10' | Remove-AppxPackage
+
+# Microsoft Tips app
+Write-Host "--- Microsoft Tips app"
+Get-AppxPackage 'Microsoft.Getstarted' | Remove-AppxPackage
+
+# Microsoft Messaging app
+Write-Host "--- Microsoft Messaging app"
+Get-AppxPackage 'Microsoft.Messaging' | Remove-AppxPackage
+
+# Mixed Reality Portal app
+Write-Host "--- Mixed Reality Portal app"
+Get-AppxPackage 'Microsoft.MixedReality.Portal' | Remove-AppxPackage
+
+# Feedback Hub app
+Write-Host "--- Feedback Hub app"
+Get-AppxPackage 'Microsoft.WindowsFeedbackHub' | Remove-AppxPackage
+
+# Windows Alarms and Clock app
+Write-Host "--- Windows Alarms and Clock app"
+Get-AppxPackage 'Microsoft.WindowsAlarms' | Remove-AppxPackage
+
+# Paint 3D app
+Write-Host "--- Paint 3D app"
+Get-AppxPackage 'Microsoft.MSPaint' | Remove-AppxPackage
+
+# Windows Maps app
+Write-Host "--- Windows Maps app"
+Get-AppxPackage 'Microsoft.WindowsMaps' | Remove-AppxPackage
+
+# ------------------------------------------
+# ---- Minecraft for Windows 10 app ----
+# ------------------------------------------
+Write-Host "--- Minecraft for Windows 10 app"
+Get-AppxPackage 'Microsoft.MinecraftUWP' | Remove-AppxPackage
+# ------------------------------------------
+
+
+# ------------------------------------------
+# -------- Microsoft People app -----------
+# ------------------------------------------
+Write-Host "--- Microsoft People app"
+Get-AppxPackage 'Microsoft.People' | Remove-AppxPackage
+# ------------------------------------------
+
+
+# ------------------------------------------
+# ---------- Microsoft Pay app ------------
+# ------------------------------------------
+Write-Host "--- Microsoft Pay app"
+Get-AppxPackage 'Microsoft.Wallet' | Remove-AppxPackage
+# ------------------------------------------
+ 
+
+# ------------------------------------------
+# ---------- Snip & Sketch app -----------
+# ------------------------------------------
+Write-Host "--- Snip & Sketch app"
+Get-AppxPackage 'Microsoft.ScreenSketch' | Remove-AppxPackage
+# ------------------------------------------
+
+
+# ------------------------------------------
+# ------------ Print 3D app ---------------
+# ------------------------------------------
+Write-Host "--- Print 3D app"
+Get-AppxPackage 'Microsoft.Print3D' | Remove-AppxPackage
+# ------------------------------------------
+
+# ----------------------------------------------------------
+# ---------------------Mobile Plans app---------------------
+# ----------------------------------------------------------
+Write-Host "--- Mobile Plans app"
+Get-AppxPackage 'Microsoft.OneConnect' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ------------Microsoft Solitaire Collection app------------
+# ----------------------------------------------------------
+Write-Host "--- Microsoft Solitaire Collection app"
+Get-AppxPackage 'Microsoft.MicrosoftSolitaireCollection' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------Microsoft Sticky Notes app----------------
+# ----------------------------------------------------------
+Write-Host "--- Microsoft Sticky Notes app"
+Get-AppxPackage 'Microsoft.MicrosoftStickyNotes' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ------------------Mail and Calendar app-------------------
+# ----------------------------------------------------------
+Write-Host "--- Mail and Calendar app"
+Get-AppxPackage 'microsoft.windowscommunicationsapps' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+# ----------------------------------------------------------
+# ------------------------Skype app-------------------------
+# ----------------------------------------------------------
+Write-Host "--- Skype app"
+Get-AppxPackage 'Microsoft.SkypeApp' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# -----------------------GroupMe app------------------------
+# ----------------------------------------------------------
+Write-Host "--- GroupMe app"
+Get-AppxPackage 'Microsoft.GroupMe10' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------Windows Voice Recorder app----------------
+# ----------------------------------------------------------
+Write-Host "--- Windows Voice Recorder app"
+Get-AppxPackage 'Microsoft.WindowsSoundRecorder' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# -----------------Microsoft 3D Builder app-----------------
+# ----------------------------------------------------------
+Write-Host "--- Microsoft 3D Builder app"
+Get-AppxPackage 'Microsoft.3DBuilder' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+
+# ----------------------------------------------------------
+# ----------------------3D Viewer app-----------------------
+# ----------------------------------------------------------
+Write-Host "--- 3D Viewer app"
+Get-AppxPackage 'Microsoft.Microsoft3DViewer' | Remove-AppxPackage
+# ----------------------------------------------------------
+
+# Uninstall Edge (chromium-based)
+Write-Host "--- Uninstall Edge (chromium-based)"
+$installer = Get-ChildItem "$env:ProgramFiles*\Microsoft\Edge\Application\*\Installer\setup.exe"
+if (!$installer) {
+    Write-Host "Could not find the installer"
+} else {
+    & $installer.FullName -Uninstall -System-Level -Verbose-Logging -Force-Uninstall
+}
+
+
 
 Read-Host "Press Enter to exit"

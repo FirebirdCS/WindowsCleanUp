@@ -66,7 +66,7 @@ namespace ProyectoWindowsCleanUp {
 			this->btn_Clean->Name = L"btn_Clean";
 			this->btn_Clean->Size = System::Drawing::Size(221, 74);
 			this->btn_Clean->TabIndex = 0;
-			this->btn_Clean->Text = L"Limpieza de servicios de tracking";
+			this->btn_Clean->Text = L"Limpieza de servicios de tracking / Remover porgramas innecesarios";
 			this->btn_Clean->UseVisualStyleBackColor = true;
 			this->btn_Clean->Click += gcnew System::EventHandler(this, &Main::Clean_Click);
 			// 
